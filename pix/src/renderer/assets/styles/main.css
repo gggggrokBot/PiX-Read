@@ -44,6 +44,13 @@ body {
   -webkit-app-region: drag;
 }
 
+/* Web / Capacitor: no Electron frameless drag strip */
+html.pix-capacitor .pix-drag-bar,
+html[data-pix-platform="browser"] .pix-drag-bar,
+html[data-pix-platform="capacitor"] .pix-drag-bar {
+  display: none;
+}
+
 /* ── Vuetify font override ── */
 .v-application {
   font-family: var(--pix-font-ui) !important;

@@ -428,14 +428,8 @@ watch(
   }
 }
 
-:global(html.pix-capacitor) .pix-drag-bar,
-:global([data-pix-platform="browser"]) .pix-drag-bar,
-:global([data-pix-platform="capacitor"]) .pix-drag-bar {
-  display: none;
-}
-
 :global(html.pix-capacitor),
-:global([data-pix-platform="capacitor"]) {
+:global(html[data-pix-platform="capacitor"]) {
   padding-top: env(safe-area-inset-top, 0px);
 }
 </style>
