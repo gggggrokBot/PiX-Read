@@ -2,39 +2,69 @@
 /**
  * AppLayout - Three-panel workspace shell
  *
- * ┌────────┬────────────────────────┬────────┐
- * │ Left   │ Center                 │ Right  │
- * │        │ (topbar+content+       │        │
- * │        │  composer internal)    │        │
- * └────────┴────────────────────────┴────────┘
- *
- * A thin drag bar owns the frameless window's draggable strip, so the window
- * controls stay clickable. Left and Right are full-height. Center manages its
- * own internal header / content / composer structure.
- * Left and right can each collapse so the reader takes the remaining width;
- * a collapsed chat pane leaves a floating "对话" button to bring it back.
- * Below 960px the chat pane becomes an overlay the user can open and close.
+ * Desktop: left | center | right with collapse.
+ * Narrow (<960px): chat becomes an overlay.
+ * Phone (<640px): left also overlays; a bottom nav switches library / notes / chat.
  */
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watch } from "vue";
 
 const props = defineProps<{
   leftCollapsed?: boolean;
   rightCollapsed?: boolean;
+  leftTab?: "library" | "notes";
 }>();
 
 const emit = defineEmits<{
   "expand-right": [];
+  "update:leftCollapsed": [value: boolean];
+  "update:leftTab": [value: "library" | "notes"];
 }>();
 
 const NARROW_QUERY = "(max-width: 959px)";
+const PHONE_QUERY = "(max-width: 639px)";
 const narrow = ref(window.matchMedia(NARROW_QUERY).matches);
+const phone = ref(window.matchMedia(PHONE_QUERY).matches);
 const chatOpen = ref(false);
+const libraryOpen = ref(false);
 
 const chatVisible = computed(() => (narrow.value ? chatOpen.value : !props.rightCollapsed));
+const leftVisible = computed(() => {
+  if (phone.value) return libraryOpen.value;
+  return !props.leftCollapsed;
+});
 
 function openChat(): void {
+  if (phone.value) libraryOpen.value = false;
   if (narrow.value) chatOpen.value = true;
   else emit("expand-right");
+}
+
+function openLibrary(): void {
+  chatOpen.value = false;
+  if (phone.value) {
+    libraryOpen.value = true;
+    emit("update:leftTab", "library");
+    return;
+  }
+  emit("update:leftCollapsed", false);
+  emit("update:leftTab", "library");
+}
+
+function openNotes(): void {
+  chatOpen.value = false;
+  if (phone.value) {
+    libraryOpen.value = true;
+    emit("update:leftTab", "notes");
+    return;
+  }
+  emit("update:leftCollapsed", false);
+  emit("update:leftTab", "notes");
+}
+
+function focusReader(): void {
+  chatOpen.value = false;
+  libraryOpen.value = false;
+  if (!phone.value) emit("update:leftCollapsed", true);
 }
 
 function onNarrowChange(event: MediaQueryListEvent): void {
@@ -42,26 +72,62 @@ function onNarrowChange(event: MediaQueryListEvent): void {
   if (!event.matches) chatOpen.value = false;
 }
 
-let mediaQuery: MediaQueryList | null = null;
+function onPhoneChange(event: MediaQueryListEvent): void {
+  phone.value = event.matches;
+  if (!event.matches) libraryOpen.value = false;
+}
+
+let narrowMq: MediaQueryList | null = null;
+let phoneMq: MediaQueryList | null = null;
 
 onMounted(() => {
-  mediaQuery = window.matchMedia(NARROW_QUERY);
-  narrow.value = mediaQuery.matches;
-  mediaQuery.addEventListener("change", onNarrowChange);
+  narrowMq = window.matchMedia(NARROW_QUERY);
+  phoneMq = window.matchMedia(PHONE_QUERY);
+  narrow.value = narrowMq.matches;
+  phone.value = phoneMq.matches;
+  narrowMq.addEventListener("change", onNarrowChange);
+  phoneMq.addEventListener("change", onPhoneChange);
+  if (phone.value) emit("update:leftCollapsed", true);
 });
 
 onBeforeUnmount(() => {
-  mediaQuery?.removeEventListener("change", onNarrowChange);
-  mediaQuery = null;
+  narrowMq?.removeEventListener("change", onNarrowChange);
+  phoneMq?.removeEventListener("change", onPhoneChange);
+  narrowMq = null;
+  phoneMq = null;
 });
+
+watch(
+  () => props.leftCollapsed,
+  (collapsed) => {
+    if (phone.value && collapsed === false) libraryOpen.value = true;
+    if (phone.value && collapsed === true) libraryOpen.value = false;
+  },
+);
 </script>
 
 <template>
-  <div class="app-shell">
+  <div class="app-shell" :class="{ phone }">
     <div class="pix-drag-bar"></div>
 
-    <div class="app-layout" :class="{ 'left-collapsed': leftCollapsed }">
-      <aside v-show="!leftCollapsed" class="layout-left">
+    <div class="app-layout" :class="{ 'left-collapsed': !leftVisible && !phone, phone }">
+      <aside
+        v-show="leftVisible"
+        class="layout-left"
+        :class="{ 'left-overlay': phone }"
+      >
+        <div v-if="phone" class="panel-overlay-bar">
+          <span class="panel-overlay-title">{{ leftTab === 'notes' ? '笔记' : '资料库' }}</span>
+          <button
+            type="button"
+            class="panel-overlay-close"
+            title="关闭"
+            aria-label="关闭"
+            @click="libraryOpen = false; emit('update:leftCollapsed', true)"
+          >
+            <v-icon size="16">mdi-close</v-icon>
+          </button>
+        </div>
         <slot name="left" />
       </aside>
 
@@ -83,12 +149,12 @@ onBeforeUnmount(() => {
           </button>
         </div>
         <div class="chat-slot">
-          <slot name="right" :narrow="narrow" />
+          <slot name="right" :narrow="narrow" :phone="phone" />
         </div>
       </aside>
 
       <button
-        v-if="!chatVisible"
+        v-if="!chatVisible && !phone"
         type="button"
         class="chat-open-btn"
         title="打开对话面板"
@@ -98,6 +164,25 @@ onBeforeUnmount(() => {
         <v-icon size="16">mdi-chat-outline</v-icon>
         <span>对话</span>
       </button>
+
+      <nav v-if="phone" class="phone-bottom-nav" aria-label="主导航">
+        <button type="button" class="nav-item" :class="{ active: libraryOpen && leftTab === 'library' }" @click="openLibrary">
+          <v-icon size="20">mdi-folder-outline</v-icon>
+          <span>资料库</span>
+        </button>
+        <button type="button" class="nav-item" :class="{ active: !libraryOpen && !chatOpen }" @click="focusReader">
+          <v-icon size="20">mdi-book-open-page-variant-outline</v-icon>
+          <span>阅读</span>
+        </button>
+        <button type="button" class="nav-item" :class="{ active: chatOpen }" @click="openChat">
+          <v-icon size="20">mdi-chat-outline</v-icon>
+          <span>对话</span>
+        </button>
+        <button type="button" class="nav-item" :class="{ active: libraryOpen && leftTab === 'notes' }" @click="openNotes">
+          <v-icon size="20">mdi-notebook-outline</v-icon>
+          <span>笔记</span>
+        </button>
+      </nav>
 
       <slot name="overlay" />
     </div>
@@ -169,7 +254,8 @@ onBeforeUnmount(() => {
   min-height: 0;
 }
 
-.chat-overlay-bar {
+.chat-overlay-bar,
+.panel-overlay-bar {
   display: none;
 }
 
@@ -201,6 +287,10 @@ onBeforeUnmount(() => {
   background: var(--pix-bg-hover);
 }
 
+.phone-bottom-nav {
+  display: none;
+}
+
 @media (max-width: 959px) {
   .app-layout {
     gap: 6px;
@@ -216,8 +306,6 @@ onBeforeUnmount(() => {
     right: 14px;
   }
 
-  /* Chat becomes an overlay above the reader instead of disappearing, so the
-   * narrow layout still gives the conversation a full-height column. */
   .layout-right.chat-overlay {
     position: absolute;
     top: 4px;
@@ -245,7 +333,8 @@ onBeforeUnmount(() => {
     color: var(--pix-text-secondary);
   }
 
-  .chat-overlay-close {
+  .chat-overlay-close,
+  .panel-overlay-close {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -259,9 +348,94 @@ onBeforeUnmount(() => {
     padding: 0;
   }
 
-  .chat-overlay-close:hover {
+  .chat-overlay-close:hover,
+  .panel-overlay-close:hover {
     background: var(--pix-bg-hover);
     color: var(--pix-text-primary);
   }
+}
+
+@media (max-width: 639px) {
+  .app-layout.phone {
+    padding: 0;
+    gap: 0;
+    padding-bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .layout-center {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .layout-left.left-overlay,
+  .layout-right.chat-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-width: 0;
+    border-radius: 0;
+    z-index: 25;
+    bottom: calc(56px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .panel-overlay-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 10px 10px 14px;
+    border-bottom: 1px solid var(--pix-border-light);
+    flex-shrink: 0;
+  }
+
+  .panel-overlay-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--pix-text-primary);
+  }
+
+  .phone-bottom-nav {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 30;
+    height: calc(56px + env(safe-area-inset-bottom, 0px));
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    background: var(--pix-bg-elevated, #fff);
+    border-top: 1px solid var(--pix-border-light);
+  }
+
+  .nav-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+    border: none;
+    background: transparent;
+    color: var(--pix-text-secondary);
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  .nav-item.active {
+    color: var(--pix-accent, #31424f);
+  }
+}
+
+:global(html.pix-capacitor) .pix-drag-bar,
+:global([data-pix-platform="browser"]) .pix-drag-bar,
+:global([data-pix-platform="capacitor"]) .pix-drag-bar {
+  display: none;
+}
+
+:global(html.pix-capacitor),
+:global([data-pix-platform="capacitor"]) {
+  padding-top: env(safe-area-inset-top, 0px);
 }
 </style>

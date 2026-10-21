@@ -10,6 +10,7 @@ import { useSettingsStore } from "../stores/settings-store";
 import { useProjectStore } from "../stores/project-store";
 import { useSessionStore } from "../stores/session-store";
 import { useRpc } from "../composables/useRpc";
+import { detectPlatform } from "../platform/detect";
 import type { ProjectInfo } from "@/types/session";
 
 const router = useRouter();
@@ -24,6 +25,15 @@ const feedbackText = ref("");
 const feedbackColor = ref<"error" | "info" | "success">("error");
 /** 在途守卫：双击最近打开不得并发走两次 startSession（第二次由主进程串行门幂等吸收，但前端不发）。 */
 const opening = ref(false);
+const platform = detectPlatform();
+const importFolderLabel = computed(() =>
+  platform === "electron" ? "打开资料库文件夹" : "导入 PDF 到资料库",
+);
+const emptyHint = computed(() =>
+  platform === "electron"
+    ? "从一个本地文件夹开始：把论文、讲义、笔记放进同一个文件夹，PiX-Read 会把它作为资料库。"
+    : "在手机或浏览器里导入 PDF：文件保存在本机应用存储中，提问时自动附带当前文档与页码。",
+);
 
 function showFeedback(text: string, color: "error" | "info" | "success" = "error"): void {
   feedbackText.value = text;
@@ -130,10 +140,10 @@ function formatDate(timestamp: number): string {
               size="large"
               block
               :loading="opening"
-              prepend-icon="mdi-folder-open-outline"
+              :prepend-icon="platform === 'electron' ? 'mdi-folder-open-outline' : 'mdi-file-pdf-box'"
               @click="openFolder"
             >
-              打开资料库文件夹
+              {{ importFolderLabel }}
             </v-btn>
           </div>
         </div>
@@ -175,7 +185,7 @@ function formatDate(timestamp: number): string {
         </section>
 
         <section v-else class="home-section home-empty">
-          <p class="empty-text">从一个本地文件夹开始：把论文、讲义、笔记放进同一个文件夹，PiX-Read 会把它作为资料库。</p>
+          <p class="empty-text">{{ emptyHint }}</p>
           <p class="empty-text">所有内容只保存在本机，提问时自动附带当前文档与页码。</p>
         </section>
 

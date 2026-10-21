@@ -315,7 +315,10 @@ async function goHome(): Promise<void> {
       class="workspace-layout"
       :left-collapsed="leftCollapsed"
       :right-collapsed="rightCollapsed"
+      :left-tab="leftTab"
       @expand-right="rightCollapsed = false"
+      @update:left-collapsed="leftCollapsed = $event"
+      @update:left-tab="selectLeftTab"
     >
       <template #left>
         <div class="pane-shell">
