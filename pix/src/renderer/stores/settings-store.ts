@@ -11,7 +11,7 @@
 import { defineStore } from "pinia";
 import { ref, computed } from "vue";
 import type { GuiSettings } from "@/types/session";
-import type { PixApi } from "../../main/preload";
+import type { PixApi } from "@shared/pix-api";
 import type { PixStoragePaths } from "../../main/pix-paths";
 
 function api(): PixApi | null {

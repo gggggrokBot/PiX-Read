@@ -2,7 +2,7 @@
  * IPC communication types for renderer.
  */
 
-import type { PixApi } from "../../main/preload";
+import type { PixApi } from "@shared/pix-api";
 
 declare global {
   interface Window {

@@ -16,7 +16,7 @@
 import { computed, ref } from "vue";
 import { defineStore } from "pinia";
 import type { ReaderDocState, ReaderStateFile } from "@shared/types";
-import type { PixApi } from "../../main/preload";
+import type { PixApi } from "@shared/pix-api";
 import { MAX_SCALE, MIN_SCALE, useReaderStore } from "./reader-store";
 import { useProjectStore } from "./project-store";
 import { absoluteDocPath, currentDocKey, docDisplayName, docPathKey } from "../utils/notes-path";

@@ -8,14 +8,10 @@
  */
 
 import { contextBridge, ipcRenderer } from "electron";
-import type { PixStoragePaths } from "./pix-paths.js";
 import type {
   AgentSessionEvent,
   GuiSettings,
   LibraryFileResult,
-  LibraryNode,
-  McpConfigInfo,
-  McpServerInfo,
   ReaderNoteDraft,
   ReaderNotesExportResult,
   ReaderNotesLoadResult,
@@ -29,90 +25,10 @@ import type {
   ReaderStateSaveResult,
   RequestUserInputRequest,
   RpcCommand,
-  SessionInfo,
 } from "../shared/types.js";
+import type { PixApi } from "../shared/pix-api.js";
 
-export interface PixApi {
-  // File dialogs
-  selectProject: () => Promise<string | null>;
-  selectChatFiles: () => Promise<string[]>;
-
-  // Agent session lifecycle
-  startSession: (projectDir: string) => Promise<{ success: boolean; error?: string }>;
-  stopSession: () => Promise<{ success: boolean }>;
-  isAgentRunning: () => Promise<boolean>;
-
-  // RPC commands
-  sendCommand: <T = unknown>(command: RpcCommand) => Promise<{ success: boolean; data?: T; error?: string }>;
-
-  // Settings
-  getSettings: () => Promise<GuiSettings>;
-  setSettings: (settings: Partial<GuiSettings>) => Promise<{ success: boolean }>;
-  getStoragePaths: () => Promise<PixStoragePaths>;
-
-  // Event subscriptions
-  onAgentEvent: (callback: (event: AgentSessionEvent) => void) => () => void;
-  onAgentReady: (callback: () => void) => () => void;
-  onAgentExit: (callback: (data: { code: number | null; signal: string | null; stderr: string }) => void) => () => void;
-  onAgentError: (callback: (err: { message: string }) => void) => () => void;
-  onUserInputRequest: (callback: (request: RequestUserInputRequest) => void) => () => void;
-
-  // Session management
-  listSessions: (projectDir: string) => Promise<SessionInfo[]>;
-  deleteSession: (sessionPath: string, projectDir?: string) => Promise<{ success: boolean; error?: string }>;
-
-  // Library (workspace file tree)
-  libraryList: (dir: string, depth?: number) => Promise<{ success: boolean; nodes: LibraryNode[]; error?: string }>;
-  libraryOpenPath: (targetPath: string) => Promise<{ success: boolean; error?: string }>;
-  libraryShowInFolder: (targetPath: string) => Promise<{ success: boolean }>;
-  libraryReadText: (targetPath: string) => Promise<LibraryFileResult & { content?: string; truncated?: boolean }>;
-  libraryReadFile: (targetPath: string) => Promise<LibraryFileResult>;
-
-  // pdf.js preset resources (CMaps / standard fonts) for the inline-worker viewer
-  readPdfResource: (
-    kind: "cmap" | "font",
-    name: string,
-  ) => Promise<{ success: boolean; data?: Uint8Array; error?: string }>;
-
-  // Reader notes (workspace .pix-read/notes.json)
-  notesLoad: () => Promise<ReaderNotesLoadResult>;
-  notesAdd: (draft: ReaderNoteDraft) => Promise<ReaderNotesMutationResult>;
-  notesUpdate: (id: string, comment: string) => Promise<ReaderNotesMutationResult>;
-  notesDelete: (id: string) => Promise<ReaderNotesMutationResult>;
-  notesRestore: (id: string) => Promise<ReaderNotesMutationResult>;
-  notesExport: () => Promise<ReaderNotesExportResult>;
-  notesExportReport: (input: ReaderNotesReportInput) => Promise<ReaderNotesReportResult>;
-  notesReset: () => Promise<ReaderNotesResetResult>;
-  notesStat: () => Promise<ReaderNotesStatResult>;
-
-  // Reader state (workspace .pix-read/reader-state.json)
-  readerStateLoad: () => Promise<ReaderStateLoadResult>;
-  readerStateSave: (draft: ReaderStateSaveDraft) => Promise<ReaderStateSaveResult>;
-
-  // Window controls (frameless window)
-  windowMinimize: () => Promise<void>;
-  windowMaximize: () => Promise<void>;
-  windowClose: () => Promise<void>;
-  windowIsMaximized: () => Promise<boolean>;
-  onWindowMaximizeChange: (callback: (maximized: boolean) => void) => () => void;
-
-  // MCP queries
-  mcpGetServers: () => Promise<McpServerInfo[]>;
-  mcpGetConfig: () => Promise<McpConfigInfo>;
-
-  // Auto update
-  checkForUpdates: () => Promise<{
-    success: boolean;
-    hasUpdate?: boolean;
-    currentVersion?: string;
-    latestVersion?: string;
-    releaseNotes?: string;
-    releaseDate?: string;
-    error?: string;
-  }>;
-  downloadUpdate: () => Promise<{ success: boolean; error?: string }>;
-  installUpdate: () => Promise<{ success: boolean; error?: string }>;
-}
+export type { PixApi } from "../shared/pix-api.js";
 
 const api: PixApi = {
   selectProject: () => ipcRenderer.invoke("select-project"),

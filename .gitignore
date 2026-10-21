@@ -37,3 +37,15 @@ vuetify_guide/
 # scratch written into the repo root by concurrent agent sessions
 todo.md
 plans/
+
+# pdf.js assets copied from node_modules for web/android (see pix/scripts/sync-pdfjs-assets.mjs)
+pix/public/pdfjs/
+# Capacitor / Android local build
+pix/android/.gradle/
+pix/android/app/build/
+pix/android/build/
+pix/android/local.properties
+pix/android/captures/
+pix/android/.idea/
+pix/android/*.iml
+pix/android/app/src/main/assets/public/

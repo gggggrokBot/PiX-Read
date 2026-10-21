@@ -16,6 +16,8 @@
 import { app } from "electron";
 import { mkdirSync } from "fs";
 import { join } from "path";
+import type { PixStoragePaths } from "../shared/pix-api.js";
+export type { PixStoragePaths } from "../shared/pix-api.js";
 
 export const pixRootDir = join(app.getPath("appData"), "PiX-Read");
 export const pixGuiSettingsFile = join(pixRootDir, "pix-settings.json");
@@ -57,18 +59,6 @@ export function pixProjectSessionsDir(cwd: string): string {
 	const dir = join(pixSessionsRootDir, encodeProjectSessionDirName(cwd));
 	mkdirSync(dir, { recursive: true });
 	return dir;
-}
-
-export interface PixStoragePaths {
-	rootDir: string;
-	agentDir: string;
-	guiSettingsFile: string;
-	kernelSettingsFile: string;
-	authJsonFile: string;
-	modelsJsonFile: string;
-	mcpJsonFile: string;
-	sessionsRootDir: string;
-	logsDir: string;
 }
 
 export function getPixStoragePaths(): PixStoragePaths {

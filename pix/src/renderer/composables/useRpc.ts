@@ -12,7 +12,7 @@ import type {
   UserMessageForForking,
   ResourceStatus,
 } from "@/types/rpc";
-import type { PixApi } from "../../main/preload";
+import type { PixApi } from "@shared/pix-api";
 
 function api(): PixApi {
 	if (!window.pixApi) {

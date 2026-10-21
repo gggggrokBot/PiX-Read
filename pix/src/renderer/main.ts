@@ -13,6 +13,7 @@ import App from "./App.vue";
 import router from "./router";
 import "./assets/styles/main.css";
 import "./types/ipc"; // Register global type declarations
+import { installPlatform } from "./platform/install";
 
 const vuetify = createVuetify({
   components: { ...vuetifyComponents },
@@ -82,10 +83,16 @@ const vuetify = createVuetify({
   },
 });
 
-const app = createApp(App);
+async function boot(): Promise<void> {
+  await installPlatform();
 
-app.use(createPinia());
-app.use(router);
-app.use(vuetify);
+  const app = createApp(App);
 
-app.mount("#app");
+  app.use(createPinia());
+  app.use(router);
+  app.use(vuetify);
+
+  app.mount("#app");
+}
+
+void boot();

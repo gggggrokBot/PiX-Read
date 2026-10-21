@@ -17,7 +17,7 @@ import type {
   ReaderNotesReportChapter,
   ReaderNotesStatResult,
 } from "@shared/types";
-import type { PixApi } from "../../main/preload";
+import type { PixApi } from "@shared/pix-api";
 import { useReaderStore } from "./reader-store";
 import { useProjectStore } from "./project-store";
 import { buildChapterRanges } from "../utils/outline-notes";
