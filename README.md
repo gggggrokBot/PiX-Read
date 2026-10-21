@@ -73,6 +73,22 @@ packages/
 └── mcp-adapter/                # pi-mcp-adapter:MCP 协议适配器
 ```
 
+
+## Android
+
+安卓移植在 `Android` 分支维护，使用 Capacitor 包裹同一套 Vue 渲染层。
+
+- 构建与能力边界见 [`pix/android/README.md`](pix/android/README.md)
+- 平台抽象：`pix/src/shared/pix-api.ts` + `pix/src/renderer/platform/`
+- **不是** Electron 主进程的完整移植：对话为 WebView 内轻量 HTTP 运行时，MCP / coding-agent 内核未上船
+
+```bash
+cd pix
+npm install --ignore-scripts
+npm run android:sync
+npm run android:open   # 或 cd android && ./gradlew assembleDebug
+```
+
 ## 开发
 
 ```bash

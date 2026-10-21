@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">PiX-Read</string>
+    <string name="title_activity_main">PiX-Read</string>
+    <string name="package_name">com.pixread.app</string>
+    <string name="custom_url_scheme">com.pixread.app</string>
+</resources>
